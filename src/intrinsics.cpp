@@ -240,22 +240,6 @@ static Value *emit_unboxed(jl_value_t *e, jl_codectx_t *ctx)
     return emit_expr(e, ctx, false);
 }
 
-static Type *jl_llvmtuple_eltype(Type *tuple, jl_value_t *jt, size_t i)
-{
-    Type *ety = NULL;
-    if (tuple->isArrayTy())
-        ety = dyn_cast<ArrayType>(tuple)->getElementType();
-    else if (tuple->isVectorTy())
-        ety = dyn_cast<VectorType>(tuple)->getElementType();
-    else if (tuple == T_void)
-        ety = T_void;
-    else if (tuple->isStructTy())
-        ety = julia_type_to_llvm(jl_field_type(jt,i));
-    else
-        assert(false);
-    return ety;
-}
-
 static Value *ghostValue(jl_value_t *ty);
 
 // emit code to unpack a raw value from a box

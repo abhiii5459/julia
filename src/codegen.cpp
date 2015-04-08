@@ -1976,106 +1976,14 @@ static Value *emit_known_call(jl_value_t *ff, jl_value_t **args, size_t nargs,
             JL_GC_POP();
             return tbaa_decorate(tbaa_const, builder.CreateLoad(prepare_global(jlemptytuple_var)));
         }
-        /*
-        size_t i;
-        for(i=0; i < nargs; i++) {
-            jl_value_t *it = (jl_value_t*)expr_type(args[i+1],ctx);
-            if (!(jl_isbits(it) && jl_is_leaf_type(it)))
-                break;
-        }
-        */
         if (ctx->linfo->specTypes) {
             rt1 = expr_type(expr, ctx);
             if (jl_is_tuple_type(rt1) && jl_is_leaf_type(rt1) && nargs == jl_datatype_nfields(rt1)) {
                 Value *tpl = emit_new_struct(rt1, nargs+1, args, ctx);
                 JL_GC_POP();
                 return tpl;
-                /*
-                for(i=0; i < nargs; i++) {
-                    // paranoia: make sure the inferred tuple type matches what
-                    // we are about to construct.
-                    if (!jl_types_equal(jl_field_type(rt1,i), expr_type(args[i+1],ctx)))
-                        break;
-                }
-                if (i >= nargs) {
-                    Type *ty = julia_type_to_llvm(rt1);
-                    Value *tpl = NULL;
-                    if (ty != T_void)
-                        tpl = UndefValue::get(ty);
-                    for (size_t i = 0; i < nargs; ++i) {
-                        Type *ety = NULL;
-                        if (tpl != NULL)
-                            ety = jl_llvmtuple_eltype(tpl->getType(),rt1,i);
-                        if (tpl == NULL || type_is_ghost(ety)) {
-                            emit_expr(args[i+1],ctx); //for side effects (if any)
-                            continue;
-                        }
-                        assert(tpl != NULL);
-                        Value *elt = emit_unbox(ety,emit_unboxed(args[i+1],ctx),jl_field_type(rt1,i));
-                        tpl = emit_setfield((jl_tupletype_t*)rt1,tpl,i-1,elt,ctx,false,false);
-                    }
-                    JL_GC_POP();
-                    if (ty->isEmptyTy())
-                        return mark_julia_type(tpl, rt1);
-                    return tpl;
-                }
-                */
             }
         }
-
-/*
-        int last_depth = ctx->argDepth;
-        // eval the first argument first, then do hand-over-hand to track the tuple.
-        Value *arg1val = emit_expr(args[1], ctx);
-        Value *arg1 = boxed(arg1val,ctx);
-        if (arg1val->getType() != jl_pvalue_llvmt || might_need_root(args[1]))
-            make_gcroot(arg1, ctx);
-        bool rooted = false;
-#ifdef OVERLAP_SVEC_LEN
-        size_t nwords = nargs;
-#else
-        size_t nwords = nargs+1;
-#endif
-        Value *tup = emit_allocobj(sizeof(void*)*nwords);
-#ifdef OVERLAP_SVEC_LEN
-        builder.CreateStore(arg1, emit_nthptr_addr(tup, 0));
-#else
-        builder.CreateStore(arg1, emit_nthptr_addr(tup, 1));
-        emit_write_barrier(ctx, tup, arg1);
-#endif
-        ctx->argDepth = last_depth;
-#ifdef  OVERLAP_SVEC_LEN
-        builder.
-            CreateStore(builder.
-                        CreateOr(builder.CreatePtrToInt(literal_pointer_val((jl_value_t*)jl_svec_type), T_int64),
-                                 ConstantInt::get(T_int64, nargs<<52)),
-                        builder.CreateBitCast(emit_typeptr_addr(tup), T_pint64));
-#else
-        builder.CreateStore(literal_pointer_val((jl_value_t*)jl_svec_type), emit_typeptr_addr(tup));
-        builder.CreateStore(ConstantInt::get(T_size, nargs),
-                            builder.CreateBitCast(tup, T_psize));
-#endif
-        for(i=1; i < nargs; i++) {
-            builder.CreateStore(V_null, emit_nthptr_addr(tup, i+TUPLE_DATA_OFFSET));
-        }
-        for(i=1; i < nargs; i++) {
-            if (might_need_root(args[i+1]) && !rooted) {
-                make_gcroot(tup, ctx);
-                rooted = true;
-            }
-            Value *argval = emit_expr(args[i+1], ctx);
-            if (argval->getType() != jl_pvalue_llvmt && !rooted) {
-                make_gcroot(tup, ctx);
-                rooted = true;
-            }
-            Value *argi = boxed(argval,ctx);
-            builder.CreateStore(argi, emit_nthptr_addr(tup, i+TUPLE_DATA_OFFSET));
-            emit_write_barrier(ctx, tup, argi);
-        }
-        ctx->argDepth = last_depth;
-        JL_GC_POP();
-        return tup;
-*/
     }
     else if (f->fptr == &jl_f_throw && nargs==1) {
         Value *arg1 = boxed(emit_expr(args[1], ctx), ctx);
