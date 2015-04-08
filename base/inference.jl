@@ -441,15 +441,11 @@ const apply_type_tfunc = function (A, _isva_, args...)
 end
 t_func[apply_type] = (2, Inf, apply_type_tfunc)
 
-function tuple_tfunc(t::ANY, limit)
-    return limit ? limit_tuple_depth(t) : t
-end
-
 function builtin_tfunction(f::ANY, args::ANY, argtype::ANY)
     argtypes = argtype.parameters
     isva = argtype.va
     if is(f,tuple)
-        return tuple_tfunc(argtype, true)
+        return limit_tuple_depth(argtype)
     elseif is(f,svec)
         return SimpleVector
     elseif is(f,arrayset)
@@ -543,7 +539,7 @@ const limit_tuple_depth_ = function (t,d::Int)
         # may have to recur into other stuff in the future too.
         return Union(map(x->limit_tuple_depth_(x,d+1), t.types)...)
     end
-    if !(t <: Tuple)
+    if !(isa(t,DataType) && t.name === Tuple.name)
         return t
     end
     if d > MAX_TUPLE_DEPTH
@@ -2700,7 +2696,7 @@ end
 
 function mk_tuplecall(args, sv::StaticVarInfo)
     e = Expr(:call1, top_tuple, args...)
-    e.typ = tuple_tfunc(Tuple{Any[exprtype(x,sv) for x in args]...}, false)
+    e.typ = Tuple{Any[exprtype(x,sv) for x in args]...}
     e
 end
 

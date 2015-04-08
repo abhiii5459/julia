@@ -2080,7 +2080,8 @@ jl_datatype_t *jl_wrap_Type(jl_value_t *t)
 void jl_reinstantiate_inner_types(jl_datatype_t *t)
 {
     jl_typestack_t top;
-    top.tt = (jl_datatype_t*)t;
+    assert(jl_is_datatype(t));
+    top.tt = t;
     top.prev = NULL;
     size_t n = jl_svec_len(t->parameters);
     jl_value_t **env = (jl_value_t**)alloca(n*2*sizeof(void*));
@@ -2090,11 +2091,8 @@ void jl_reinstantiate_inner_types(jl_datatype_t *t)
     }
     t->super = (jl_datatype_t*)inst_type_w_((jl_value_t*)t->super, env, n, &top, 1);
     gc_wb(t, t->super);
-    if (jl_is_datatype(t)) {
-        jl_datatype_t *st = (jl_datatype_t*)t;
-        st->types = inst_all(st->types, env, n, &top, 1);
-        gc_wb(st, st->types);
-    }
+    t->types = inst_all(t->types, env, n, &top, 1);
+    gc_wb(t, t->types);
 }
 
 // subtype comparison
