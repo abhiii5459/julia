@@ -1035,7 +1035,7 @@ function rangesearch(haystack::Range, needle)
 end
 
 getindex(A::SparseMatrixCSC, i::Integer) = getindex(A, ind2sub(size(A),i))
-getindex(A::SparseMatrixCSC, I::(Integer,Integer)) = getindex(A, I[1], I[2])
+getindex(A::SparseMatrixCSC, I::Tuple{Integer,Integer}) = getindex(A, I[1], I[2])
 
 function getindex{T}(A::SparseMatrixCSC{T}, i0::Integer, i1::Integer)
     if !(1 <= i0 <= A.m && 1 <= i1 <= A.n); throw(BoundsError()); end
@@ -2141,7 +2141,7 @@ function hcat(X::SparseMatrixCSC...)
     SparseMatrixCSC(m, n, colptr, rowval, nzval)
 end
 
-function hvcat(rows::(Int...), X::SparseMatrixCSC...)
+function hvcat(rows::Tuple{Int,...}, X::SparseMatrixCSC...)
     nbr = length(rows)  # number of block rows
 
     tmp_rows = Array(SparseMatrixCSC, nbr)

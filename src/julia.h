@@ -543,7 +543,7 @@ STATIC_INLINE jl_value_t *jl_cellset(void *a, size_t i, void *x)
 #define jl_expr_nargs(e) jl_array_len(((jl_expr_t*)(e))->args)
 
 #define jl_fieldref(s,i) jl_get_nth_field(((jl_value_t*)s),i)
-#define jl_nfields(v)    jl_svec_len(((jl_datatype_t*)jl_typeof(v))->types)
+#define jl_nfields(v)    jl_datatype_nfields(jl_typeof(v))
 
 #define jl_symbolnode_sym(s) ((jl_sym_t*)jl_fieldref(s,0))
 #define jl_symbolnode_type(s) (jl_fieldref(s,1))

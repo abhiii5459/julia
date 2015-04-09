@@ -71,13 +71,16 @@ show(io::IO, x::UnionType) = print(io, "Union", x.types)
 show(io::IO, x::TypeConstructor) = show(io, x.body)
 
 function show(io::IO, x::DataType)
-    if isvarargtype(x)
-        print(io, x.parameters[1], "...")
-    else
-        show(io, x.name)
-        if length(x.parameters) > 0
-            show_comma_array(io, x.parameters, '{', '}')
+    show(io, x.name)
+    if (length(x.parameters) > 0 || x.name === Tuple.name) && x !== Tuple
+        print(io, '{')
+        n = length(x.parameters)
+        for i = 1:n
+            show(io, x.parameters[i])
+            i < n && print(io, ',')
         end
+        x.va && print(io, "...")
+        print(io, '}')
     end
 end
 
@@ -983,7 +986,7 @@ function print_matrix_vdots(io::IO,
 end
 
 function print_matrix(io::IO, X::AbstractVecOrMat,
-                      sz::(Integer, Integer) = (s = tty_size(); (s[1]-4, s[2])),
+                      sz::Tuple{Integer, Integer} = (s = tty_size(); (s[1]-4, s[2])),
                       pre::AbstractString = " ",
                       sep::AbstractString = "  ",
                       post::AbstractString = "",

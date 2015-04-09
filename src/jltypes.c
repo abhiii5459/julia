@@ -609,10 +609,9 @@ static jl_value_t *type_to_static_parameter_value(jl_value_t *t)
         JL_GC_PUSH1(&np);
         for(size_t i=0; i < l; i++) {
             jl_value_t *el = type_to_static_parameter_value(jl_svecref(p,i));
-            if (el != jl_svecref(p,i)) {
-                jl_svecset(np, i, el);
+            jl_svecset(np, i, el);
+            if (el != jl_svecref(p,i))
                 changed = 1;
-            }
         }
         jl_value_t *result = changed ? (jl_value_t*)jl_apply_tuple_type(np, ((jl_datatype_t*)t)->va) : t;
         JL_GC_POP();

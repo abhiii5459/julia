@@ -131,12 +131,12 @@ stagedfunction _start{T,N}(A::AbstractArray{T,N}, ::LinearSlow)
 end
 
 # Prevent an ambiguity warning
-next(R::StepRange, state::(Bool, CartesianIndex{1})) = (index=state[2]; return R[index], (index[1]==length(R), CartesianIndex{1}(index[1]+1)))
-next{T}(R::UnitRange{T}, state::(Bool, CartesianIndex{1})) = (index=state[2]; return R[index], (index[1]==length(R), CartesianIndex{1}(index[1]+1)))
-done(R::StepRange, state::(Bool, CartesianIndex{1})) = state[1]
-done(R::UnitRange, state::(Bool, CartesianIndex{1})) = state[1]
+next(R::StepRange, state::Tuple{Bool, CartesianIndex{1}}) = (index=state[2]; return R[index], (index[1]==length(R), CartesianIndex{1}(index[1]+1)))
+next{T}(R::UnitRange{T}, state::Tuple{Bool, CartesianIndex{1}}) = (index=state[2]; return R[index], (index[1]==length(R), CartesianIndex{1}(index[1]+1)))
+done(R::StepRange, state::Tuple{Bool, CartesianIndex{1}}) = state[1]
+done(R::UnitRange, state::Tuple{Bool, CartesianIndex{1}}) = state[1]
 
-stagedfunction next{T,N}(A::AbstractArray{T,N}, state::(Bool, CartesianIndex{N}))
+stagedfunction next{T,N}(A::AbstractArray{T,N}, state::Tuple{Bool, CartesianIndex{N}})
     I = state[2]
     finishedex = (N==0 ? true : :(newindex[$N] > size(A, $N)))
     meta = Expr(:meta, :inline)
@@ -149,7 +149,7 @@ stagedfunction next{T,N}(A::AbstractArray{T,N}, state::(Bool, CartesianIndex{N})
         v, (finished,newindex)
     end
 end
-stagedfunction next{I<:CartesianIndex}(iter::CartesianRange{I}, state::(Bool, I))
+stagedfunction next{I<:CartesianIndex}(iter::CartesianRange{I}, state::Tuple{Bool, I})
     N = length(I)
     finishedex = (N==0 ? true : :(newindex[$N] > iter.stop[$N]))
     meta = Expr(:meta, :inline)
@@ -162,8 +162,8 @@ stagedfunction next{I<:CartesianIndex}(iter::CartesianRange{I}, state::(Bool, I)
     end
 end
 
-done{T,N}(A::AbstractArray{T,N}, state::(Bool, CartesianIndex{N})) = state[1]
-done{I<:CartesianIndex}(iter::CartesianRange{I}, state::(Bool, I)) = state[1]
+done{T,N}(A::AbstractArray{T,N}, state::Tuple{Bool, CartesianIndex{N}}) = state[1]
+done{I<:CartesianIndex}(iter::CartesianRange{I}, state::Tuple{Bool, I}) = state[1]
 
 stagedfunction length{I<:CartesianIndex}(iter::CartesianRange{I})
     N = length(I)
@@ -249,7 +249,7 @@ end
 
 # It's most efficient to call checkbounds first, then to_index, and finally
 # allocate the output. Hence the different variants.
-_getindex(A, I::(Union(Int,AbstractVector)...)) =
+_getindex(A, I::Tuple{Union(Int,AbstractVector), ...}) =
     _getindex!(similar(A, index_shape(I...)), A, I...)
 
 # The stagedfunction here is just to work around the performance hit

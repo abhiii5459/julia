@@ -192,7 +192,7 @@ globalRNG() = GLOBAL_RNG
 
 @inline rand() = rand(GLOBAL_RNG, CloseOpen)
 @inline rand(T::Type) = rand(GLOBAL_RNG, T)
-rand(::()) = rand(GLOBAL_RNG, ()) # needed to resolve ambiguity
+rand(::Tuple{}) = rand(GLOBAL_RNG, ()) # needed to resolve ambiguity
 rand(dims::Dims) = rand(GLOBAL_RNG, dims)
 rand(dims::Integer...) = rand(convert((Int...), dims))
 rand(T::Type, dims::Dims) = rand(GLOBAL_RNG, T, dims)

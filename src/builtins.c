@@ -283,7 +283,7 @@ int jl_egal(jl_value_t *a, jl_value_t *b)
     if (dt == jl_datatype_type) {
         jl_datatype_t *dta = (jl_datatype_t*)a;
         jl_datatype_t *dtb = (jl_datatype_t*)b;
-        return dta->name == dtb->name &&
+        return dta->name == dtb->name && dta->va == dtb->va &&
             jl_egal((jl_value_t*)dta->parameters, (jl_value_t*)dtb->parameters);
     }
     if (dt->mutabl) return 0;
@@ -1058,11 +1058,21 @@ JL_CALLABLE(jl_f_methodexists)
     JL_TYPECHK(method_exists, function, args[0]);
     if (!jl_is_gf(args[0]))
         jl_error("method_exists: not a generic function");
-    JL_TYPECHK(method_exists, tuple, args[1]);
-    jl_check_type_tuple(args[1], jl_gf_name(args[0]), "method_exists");
-    return jl_method_lookup_by_type(jl_gf_mtable(args[0]),
-                                    (jl_tupletype_t*)args[1],0,0)!=jl_bottom_func ?
+    jl_value_t *argtypes = args[1];
+    JL_GC_PUSH1(&argtypes);
+    if (jl_is_tuple(args[1])) {
+        // TODO: maybe deprecation warning, better checking
+        argtypes = jl_apply_tuple_type_v((jl_value_t**)jl_data_ptr(argtypes),
+                                         jl_nfields(argtypes), 0);
+    }
+    else {
+        jl_check_type_tuple(args[1], jl_gf_name(args[0]), "method_exists");
+    }
+    jl_value_t *res = jl_method_lookup_by_type(jl_gf_mtable(args[0]),
+                                               (jl_tupletype_t*)args[1],0,0)!=jl_bottom_func ?
         jl_true : jl_false;
+    JL_GC_POP();
+    return res;
 }
 
 JL_CALLABLE(jl_f_applicable)
@@ -1082,12 +1092,22 @@ JL_CALLABLE(jl_f_invoke)
     JL_TYPECHK(invoke, function, args[0]);
     if (!jl_is_gf(args[0]))
         jl_error("invoke: not a generic function");
-    JL_TYPECHK(invoke, tuple, args[1]);
-    jl_check_type_tuple(args[1], jl_gf_name(args[0]), "invoke");
+    jl_value_t *argtypes = args[1];
+    JL_GC_PUSH1(&argtypes);
+    if (jl_is_tuple(args[1])) {
+        // TODO: maybe deprecation warning, better checking
+        argtypes = jl_apply_tuple_type_v((jl_value_t**)jl_data_ptr(argtypes),
+                                         jl_nfields(argtypes), 0);
+    }
+    else {
+        jl_check_type_tuple(args[1], jl_gf_name(args[0]), "invoke");
+    }
     if (!jl_tuple_subtype(&args[2], nargs-2, 0, (jl_datatype_t*)args[1], 1))
         jl_error("invoke: argument type error");
-    return jl_gf_invoke((jl_function_t*)args[0],
-                        (jl_tupletype_t*)args[1], &args[2], nargs-2);
+    jl_value_t *res = jl_gf_invoke((jl_function_t*)args[0],
+                                   (jl_tupletype_t*)args[1], &args[2], nargs-2);
+    JL_GC_POP();
+    return res;
 }
 
 // eq hash table --------------------------------------------------------------

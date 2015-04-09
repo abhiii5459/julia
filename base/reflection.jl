@@ -28,7 +28,7 @@ names(m::Module, all::Bool, imported::Bool) = ccall(:jl_module_names, Array{Symb
 names(m::Module, all::Bool) = names(m, all, false)
 names(m::Module) = names(m, false, false)
 
-fieldnames(t::DataType) = collect(t.names)
+fieldnames(t::DataType) = Symbol[n for n in t.name.names ]
 function fieldnames(v)
     t = typeof(v)
     if !isa(t,DataType)
@@ -37,7 +37,7 @@ function fieldnames(v)
     return fieldnames(t)
 end
 
-fieldname(t::DataType, i::Integer) = t.names[i]
+fieldname(t::DataType, i::Integer) = t.name.names[i]::Symbol
 
 isconst(s::Symbol) = ccall(:jl_is_const, Int32, (Ptr{Void}, Any), C_NULL, s) != 0
 

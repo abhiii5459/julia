@@ -1698,16 +1698,15 @@ static Value *emit_new_struct(jl_value_t *ty, size_t nargs, jl_value_t **args, j
             for(size_t i=0; i < na; i++) {
                 jl_value_t *jtype = jl_svecref(sty->types,i);
                 Type *fty = julia_type_to_llvm(jtype);
-                if (type_is_ghost(fty))
-                    continue;
-                Value *fval = emit_unbox(fty, emit_unboxed(args[i+1],ctx), jtype);
-                if (fty == T_int1)
-                    fval = builder.CreateZExt(fval, T_int8);
-                if (lt->isVectorTy()) {
-                    strct = builder.CreateInsertElement(strct, fval, ConstantInt::get(T_int32,idx));
-                }
-                else {
-                    strct = builder.CreateInsertValue(strct, fval, ArrayRef<unsigned>(&idx,1));
+                Value *fval = emit_unboxed(args[i+1], ctx);
+                if (!type_is_ghost(fty)) {
+                    fval = emit_unbox(fty, fval, jtype);
+                    if (fty == T_int1)
+                        fval = builder.CreateZExt(fval, T_int8);
+                    if (lt->isVectorTy())
+                        strct = builder.CreateInsertElement(strct, fval, ConstantInt::get(T_int32,idx));
+                    else
+                        strct = builder.CreateInsertValue(strct, fval, ArrayRef<unsigned>(&idx,1));
                 }
                 idx++;
             }

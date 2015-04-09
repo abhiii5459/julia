@@ -234,7 +234,7 @@ function precompile(f::ANY, args::Tuple)
         f = f.name.module.call
     end
     if isgeneric(f)
-        ccall(:jl_compile_hint, Void, (Any, Any), f, args)
+        ccall(:jl_compile_hint, Void, (Any, Any), f, Tuple{args...})
     end
 end
 
